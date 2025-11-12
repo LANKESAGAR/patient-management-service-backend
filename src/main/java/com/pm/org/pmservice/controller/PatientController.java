@@ -4,6 +4,8 @@ import com.pm.org.pmservice.dto.PatientRequestDTO;
 import com.pm.org.pmservice.dto.PatientResponseDTO;
 import com.pm.org.pmservice.dto.validators.CreatePatientValidationGroup;
 import com.pm.org.pmservice.service.PatientService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,25 +18,36 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/patients")
+@Tag(name = "Patient", description = "API for managing patients")
 public class PatientController {
     @Autowired
     private PatientService patientService;
 
     @GetMapping
+    @Operation(summary = "Get patients")
     public ResponseEntity<List<PatientResponseDTO>> getPatients(){
         List<PatientResponseDTO> patientsList =  patientService.getPatients();
         return ResponseEntity.ok().body(patientsList);
     }
 
     @PostMapping
+    @Operation(summary = "Create a new patient")
     public ResponseEntity<PatientResponseDTO> createPatient(@Validated({Default.class, CreatePatientValidationGroup.class}) @RequestBody PatientRequestDTO patientRequestDTO){
         PatientResponseDTO patientResponse = patientService.createPatient(patientRequestDTO);
         return ResponseEntity.ok().body(patientResponse);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a new patient")
     public ResponseEntity<PatientResponseDTO> updatePatient(@PathVariable UUID id, @Validated({Default.class}) @RequestBody PatientRequestDTO patientRequestDTO){
         PatientResponseDTO patientResponseDTO = patientService.updatePatient(id, patientRequestDTO);
         return ResponseEntity.ok().body(patientResponseDTO);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a new patient")
+    public ResponseEntity<Void> deletePatient(@PathVariable UUID id) {
+        patientService.deletePatient(id);
+        return ResponseEntity.noContent().build();
     }
 }
