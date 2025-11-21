@@ -2,6 +2,7 @@ package com.pm.org.pmservice.service;
 
 import com.pm.org.pmservice.dto.PatientRequestDTO;
 import com.pm.org.pmservice.dto.PatientResponseDTO;
+import com.pm.org.pmservice.grpc.BillingServiceGrpcClient;
 import com.pm.org.pmservice.mapper.PatientMapper;
 import com.pm.org.pmservice.model.Patient;
 import com.pm.org.pmservice.repository.PatientRepository;
@@ -20,6 +21,9 @@ public class PatientService {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private BillingServiceGrpcClient billingServiceGrpcClient;
+
     public List<PatientResponseDTO> getPatients(){
         List<Patient> patients = patientRepository.findAll();
         List<PatientResponseDTO> patientResponseDTOList = patients.stream()
@@ -30,9 +34,11 @@ public class PatientService {
     public PatientResponseDTO createPatient(PatientRequestDTO patientRequestDTO){
         if(patientRepository.existsByEmail(patientRequestDTO.getEmail())) {
             throw  new EmailAlreadyExistsException("A patient with this email "
-            + "already exists" + patientRequestDTO.getEmail());
+            + "already exists " + patientRequestDTO.getEmail());
         }
         Patient newPatient = patientRepository.save(PatientMapper.toEntity(patientRequestDTO));
+        billingServiceGrpcClient.createBillingAccount(newPatient.getId().toString(),
+                newPatient.getName(), newPatient.getEmail());
         return PatientMapper.toDto(newPatient);
     }
 
