@@ -3,6 +3,7 @@ package com.pm.org.pmservice.service;
 import com.pm.org.pmservice.dto.PatientRequestDTO;
 import com.pm.org.pmservice.dto.PatientResponseDTO;
 import com.pm.org.pmservice.grpc.BillingServiceGrpcClient;
+import com.pm.org.pmservice.kafka.KafkaProducer;
 import com.pm.org.pmservice.mapper.PatientMapper;
 import com.pm.org.pmservice.model.Patient;
 import com.pm.org.pmservice.repository.PatientRepository;
@@ -24,6 +25,9 @@ public class PatientService {
     @Autowired
     private BillingServiceGrpcClient billingServiceGrpcClient;
 
+    @Autowired
+    private KafkaProducer kafkaProducer;
+
     public List<PatientResponseDTO> getPatients(){
         List<Patient> patients = patientRepository.findAll();
         List<PatientResponseDTO> patientResponseDTOList = patients.stream()
@@ -39,6 +43,9 @@ public class PatientService {
         Patient newPatient = patientRepository.save(PatientMapper.toEntity(patientRequestDTO));
         billingServiceGrpcClient.createBillingAccount(newPatient.getId().toString(),
                 newPatient.getName(), newPatient.getEmail());
+
+        kafkaProducer.sendEvent(newPatient);
+
         return PatientMapper.toDto(newPatient);
     }
 
